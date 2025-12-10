@@ -19,14 +19,4 @@ def create_fastapi_app():
 
 if __name__ == "__main__":
     print('Запусти через just run')
-    # settings = create_settings()
-    # ip_number = IpNumber(ip='331473/23/23039-ИП')
-    # person = Person(last_name='АБУ', first_name='ШАНАБ', patronymic='ТАРИК ЗИАД МУСТАФА', birthday='16.05.1992')
-    # person = Person(last_name='Чуб', first_name='Александр', patronymic='Викторович', birthday='10.05.1984')
-    # inn = Inn(inn='2318027030')
-    # result = asyncio.run(get_fssp_data_by_ip(ip_number, settings))
-    # print(result)
-    # result = asyncio.run(get_fssp_data_by_person(person, settings))
-    # print(result)
-    # result = asyncio.run(get_fssp_data_by_inn(inn, settings))
-    # print(result)
+
