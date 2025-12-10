@@ -6,6 +6,10 @@ class CaptchaError(DomainError):
     """Ошибка при распознавании капчи."""
 
 
+class CaptchaLimitExceeded(DomainError):
+    """Превышено количество неверных попыток ввода капчи."""
+
+
 class ParsingError(DomainError):
     """Ошибка при парсинге ответа ФССП."""
 
