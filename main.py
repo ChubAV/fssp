@@ -1,10 +1,9 @@
 import logging
-from src.app import create_app
-from src.config import create_settings
-from src.log import setup_logging
-import asyncio
-from src.schemas import Inn, IpNumber, Person
-from src.service import get_fssp_data_by_ip, get_fssp_data_by_person, get_fssp_data_by_inn
+
+from src.infrastructure.config import create_settings
+from src.infrastructure.http import create_app as create_http_app
+from src.infrastructure.logging import setup_logging
+
 
 def create_fastapi_app():
     settings = create_settings()
@@ -14,7 +13,7 @@ def create_fastapi_app():
         max_bytes=settings.LOG_FILE_MAX_BYTES,
         backup_count=settings.LOG_FILE_BACKUP_COUNT,
         )
-    app = create_app(settings)
+    app = create_http_app(settings)
     return app
 
 

@@ -1,9 +1,9 @@
-# src/log.py
 import logging
 import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 import structlog
+
 
 def setup_logging(
     level=logging.INFO,
@@ -33,6 +33,7 @@ def setup_logging(
     ]
 
     if log_path:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
         file_handler = RotatingFileHandler(
             filename=log_path,
             maxBytes=max_bytes,
