@@ -16,5 +16,7 @@ Thumbs.db
 
 # Project specific
 logs/*
+!logs/.gitkeep
 temp/*
+!temp/.gitkeep
 examples.json
