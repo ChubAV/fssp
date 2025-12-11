@@ -15,6 +15,10 @@ dev:
 run:
     uv run uvicorn main:create_fastapi_app --factory --host {{HOST}} --port {{PORT}}
 
+# CLI клиент (можно передавать аргументы: just cli ip --ip-number "123/45/67")
+cli *args:
+    uv run python -m src.infrastructure.cli {{args}}
+
 # # тесты (пример, подставьте свои команды)
 # test:
 #     pytest -q

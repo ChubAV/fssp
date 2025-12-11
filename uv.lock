@@ -289,7 +289,9 @@ dependencies = [
     { name = "lxml" },
     { name = "playwright" },
     { name = "pydantic-settings" },
+    { name = "rich" },
     { name = "structlog" },
+    { name = "typer" },
 ]
 
 [package.metadata]
@@ -300,7 +302,9 @@ requires-dist = [
     { name = "lxml", specifier = ">=6.0.2" },
     { name = "playwright", specifier = ">=1.56.0" },
     { name = "pydantic-settings", specifier = ">=2.12.0" },
+    { name = "rich", specifier = ">=14.2.0" },
     { name = "structlog", specifier = ">=25.5.0" },
+    { name = "typer", specifier = ">=0.20.0" },
 ]
 
 [[package]]

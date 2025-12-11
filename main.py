@@ -18,5 +18,4 @@ def create_fastapi_app():
 
 
 if __name__ == "__main__":
-    print('Запусти через just run')
-
+   print('Используй just')
