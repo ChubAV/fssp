@@ -6,5 +6,15 @@ dist/
 wheels/
 *.egg-info
 
+# OS
+.DS_Store
+Thumbs.db
+
+
 # Virtual environments
 .venv
+
+# Project specific
+logs/
+temp/
+examples.json
