@@ -15,6 +15,6 @@ Thumbs.db
 .venv
 
 # Project specific
-logs/
-temp/
+logs/*
+temp/*
 examples.json
