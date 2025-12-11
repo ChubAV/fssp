@@ -13,7 +13,7 @@ Thumbs.db
 
 # Virtual environments
 .venv
-
+.env
 # Project specific
 logs/*
 !logs/.gitkeep
