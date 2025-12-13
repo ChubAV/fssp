@@ -3,13 +3,7 @@ from mcp.server.fastmcp import FastMCP
 
 from src.application.fssp_service import FsspService
 from src.domain import Inn, IpNumber, Person
-from src.domain.errors import (
-    CaptchaError,
-    CaptchaLimitExceeded,
-    DomainError,
-    FsspUnavailable,
-    ParsingError,
-)
+from src.domain.errors import  DomainError
 
 
 def create_mcp_server(service: FsspService) -> FastMCP:
