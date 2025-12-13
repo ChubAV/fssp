@@ -57,6 +57,9 @@ class Settings(BaseSettings):
     LOG_FILE_BACKUP_COUNT: int = Field(description="Количество копий файла лога", default=3)
     TEMP_PATH: Path = Field(description="Путь к временным файлам", default_factory=get_temp_path)
     RUCAPTCH_API_KEY: str = Field(description="API ключ для RuCaptcha")
+    MCP_TRANSPORT: str = Field(description="Тип транспорта MCP: stdio или http", default="stdio")
+    MCP_HOST: str = Field(description="Хост для HTTP транспорта MCP", default="0.0.0.0")
+    MCP_PORT: int = Field(description="Порт для HTTP транспорта MCP", default=8100)
 
     browser: BrowserConfig = Field(default_factory=BrowserConfig)
     urls: FsspUrls = Field(default_factory=FsspUrls)

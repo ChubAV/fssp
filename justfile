@@ -19,6 +19,16 @@ run:
 cli *args:
     uv run python -m src.infrastructure.cli {{args}}
 
+# MCP server через stdio (стандартный режим)
+mcp:
+    uv run python mcp_server.py
+
+# MCP server через HTTP (можно переопределять: just mcp-http MCP_HOST=127.0.0.1 MCP_PORT=8100)
+MCP_HOST := env_var_or_default("MCP_HOST", "0.0.0.0")
+MCP_PORT := env_var_or_default("MCP_PORT", "8100")
+mcp-http:
+    MCP_TRANSPORT=http uv run python mcp_server.py
+
 # # тесты (пример, подставьте свои команды)
 # test:
 #     pytest -q
