@@ -1,12 +1,13 @@
 # FSSP — сервис поиска исполнительных производств
 
-Микросервис для автоматизированного поиска сведений об исполнительных производствах на сайте [fssp.gov.ru](https://fssp.gov.ru/) с REST API и CLI.
+Микросервис для автоматизированного поиска сведений об исполнительных производствах на сайте [fssp.gov.ru](https://fssp.gov.ru/) с REST API, CLI и MCP‑сервером для интеграции с AI‑клиентами (Cursor, Claude Desktop и др.).
 
 ## Возможности
 
 - Поиск по номеру ИП, ФИО + дате рождения или ИНН
 - Автоматическое решение капчи через RuCaptcha
 - REST API на FastAPI и CLI на Typer/Rich
+- MCP Server (Model Context Protocol) с инструментами поиска по номеру ИП, ФИО+ДР и ИНН
 - Вывод результатов в человеко‑читаемом виде и в JSON
 - Структурированное логирование и ротация логов
 
@@ -15,6 +16,7 @@
 - Python 3.13+, FastAPI, Pydantic, Typer, Rich, Structlog
 - Playwright для работы с сайтом ФССП
 - uv как менеджер пакетов/раннер
+- FastMCP (MCP server) для интеграции с AI‑клиентами
 - Docker (готовый образ для продакшена)
 
 ## Требования
@@ -58,6 +60,16 @@ API доступно на `http://localhost:8000`, документация:
 - По ИНН: `just cli inn --inn "1234567890"`
 - Вывод в JSON: добавить `--format json`
 
+### MCP Server
+
+- Стандартный режим (stdio) для локальной интеграции с AI‑клиентом: `just mcp`
+- HTTP‑режим (по умолчанию `0.0.0.0:8100`): `just mcp-http` (можно переопределить `MCP_HOST` и `MCP_PORT`)
+
+MCP‑сервер предоставляет три инструмента:
+- `search_by_ip(ip_number: str)` — поиск по номеру ИП/СД/СВ
+- `search_by_person(last_name, first_name, birthday, patronymic?)` — поиск по ФИО и дате рождения
+- `search_by_inn(inn: str)` — поиск по ИНН (физ/юр лицо)
+
 ## Запуск в Docker
 
 Dockerfile собирает продакшен-образ с установленным Chromium и зависимостями Playwright.
@@ -88,6 +100,9 @@ docker run --rm \
 | `DEBUG` | Режим отладки | `false` |
 | `HOST` | Хост HTTP сервера | `0.0.0.0` |
 | `PORT` | Порт HTTP сервера | `8000` |
+| `MCP_TRANSPORT` | Транспорт MCP (`stdio` или `http`) | `stdio` |
+| `MCP_HOST` | Хост MCP‑HTTP сервера | `0.0.0.0` |
+| `MCP_PORT` | Порт MCP‑HTTP сервера | `8100` |
 
 ## Форматы входных данных
 
@@ -107,10 +122,11 @@ fssp/
 ├── src/
 │   ├── application/          # Бизнес-логика
 │   ├── domain/               # Доменные модели и ошибки
-│   └── infrastructure/       # Внешние зависимости (HTTP, CLI, Playwright)
+│   └── infrastructure/       # Внешние зависимости (HTTP, CLI, Playwright, MCP)
 ├── logs/                     # Логи приложения
 ├── temp/                     # Временные файлы (капчи, скриншоты)
 ├── main.py                   # Точка входа (FastAPI factory)
+├── mcp_server.py             # Точка входа MCP server
 ├── pyproject.toml            # Зависимости проекта
 ├── justfile                  # Скрипты для разработки/запуска
 └── README.md
