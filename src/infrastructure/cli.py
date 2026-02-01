@@ -149,13 +149,13 @@ async def _run_search(search_type: str, format: str, **kwargs: Any) -> None:
     """Внутренняя функция для выполнения поиска."""
     settings = create_settings()
     setup_logging(
-        log_path=settings.LOG_PATH,
+        log_path=settings.log_path,
         max_bytes=settings.LOG_FILE_MAX_BYTES,
         backup_count=settings.LOG_FILE_BACKUP_COUNT,
         level=logging.DEBUG if settings.DEBUG else logging.INFO,
     )
 
-    if settings.captcha is None or not settings.captcha.api_key:
+    if not settings.RUCAPTCH_API_KEY:
         console.print(
             Panel(
                 "[red]Ошибка:[/red] Не задан API ключ RuCaptcha (RUCAPTCH_API_KEY)",
@@ -165,10 +165,10 @@ async def _run_search(search_type: str, format: str, **kwargs: Any) -> None:
         )
         raise typer.Exit(1)
 
-    solver = CaptchaSolver(settings.captcha.api_key)
-    client = FsspClient(solver)
-    parser = FsspHtmlParser()
-    service = FsspService(settings, client, parser)
+    # Инициализация зависимостей через DI контейнер
+    from src.infrastructure.di import build_container
+    container = build_container(settings)
+    service = container.fssp_service
 
     try:
         result = await execute_search(service, search_type, **kwargs)

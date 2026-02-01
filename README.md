@@ -8,8 +8,24 @@
 - Автоматическое решение капчи через RuCaptcha
 - REST API на FastAPI и CLI на Typer/Rich
 - MCP Server (Model Context Protocol) с инструментами поиска по номеру ИП, ФИО+ДР и ИНН
+- Асинхронная обработка задач с retry-логикой и параллелизмом
 - Вывод результатов в человеко‑читаемом виде и в JSON
 - Структурированное логирование и ротация логов
+
+## Архитектура
+
+Проект следует принципам **Clean Architecture** с чистым разделением слоев:
+
+- **Domain Layer**: доменные модели, бизнес-правила, протоколы (интерфейсы)
+- **Application Layer**: бизнес-логика, оркестрация, use cases
+- **Infrastructure Layer**: внешние зависимости (HTTP, БД, Playwright, MCP)
+
+**Основные паттерны:**
+- Dependency Injection через контейнер (`src/infrastructure/di.py`)
+- Инверсия зависимостей (Domain не зависит от Infrastructure)
+- Protocol-based design для тестируемости
+- DTO для разделения API и Domain моделей
+- Retry pattern с экспоненциальным backoff
 
 ## Технологии
 
@@ -18,6 +34,8 @@
 - uv как менеджер пакетов/раннер
 - FastMCP (MCP server) для интеграции с AI‑клиентами
 - Docker (готовый образ для продакшена)
+- pytest, pytest-asyncio, pytest-cov для тестирования
+- ruff для линтинга и форматирования
 
 ## Требования
 
@@ -115,20 +133,102 @@ docker run --rm \
 - Коды доменных ошибок: `CaptchaError`, `CaptchaLimitExceeded`, `FsspUnavailable`, `ParsingError`, `ValidationError`.
 - Логи в `logs/main.log` с ротацией (5 МБ, 3 бэкапа). Уровень зависит от `DEBUG`.
 
+## Разработка
+
+### Установка зависимостей
+
+```bash
+# Основные зависимости
+uv sync
+
+# С dev-зависимостями (для разработки и тестирования)
+uv sync --extra dev
+```
+
+### Запуск тестов
+
+```bash
+# Все тесты
+just test
+
+# Тесты с покрытием
+just test-cov
+
+# Только unit-тесты
+just test-unit
+
+# Только integration-тесты
+just test-integration
+
+# Только e2e-тесты
+just test-e2e
+```
+
+### Линтинг и форматирование
+
+```bash
+# Проверка стиля кода
+just lint
+
+# Автоматическое форматирование
+just fmt
+
+# Полная проверка (lint + tests)
+just check
+```
+
+### Текущее покрытие тестами
+
+- **Domain модели**: 97%
+- **Infrastructure (parser, config, DI)**: 88-98%
+- **Application (services)**: требует расширения
+- **Общее покрытие**: ~58% (цель: >80%)
+
 ## Структура проекта
 
 ```
 fssp/
 ├── src/
-│   ├── application/          # Бизнес-логика
-│   ├── domain/               # Доменные модели и ошибки
-│   └── infrastructure/       # Внешние зависимости (HTTP, CLI, Playwright, MCP)
-├── logs/                     # Логи приложения
-├── temp/                     # Временные файлы (капчи, скриншоты)
-├── main.py                   # Точка входа (FastAPI factory)
-├── mcp_server.py             # Точка входа MCP server
-├── pyproject.toml            # Зависимости проекта
-├── justfile                  # Скрипты для разработки/запуска
+│   ├── domain/                      # Доменный слой
+│   │   ├── models.py               # Доменные модели и value objects
+│   │   ├── task.py                 # Модель задачи
+│   │   ├── errors.py               # Доменные ошибки
+│   │   └── protocols.py            # Протоколы (интерфейсы)
+│   ├── application/                 # Слой бизнес-логики
+│   │   ├── fssp_service.py         # Сервис работы с ФССП
+│   │   ├── task_manager.py         # Менеджер асинхронных задач
+│   │   └── retry_policy.py         # Политика повторных попыток
+│   └── infrastructure/              # Инфраструктурный слой
+│       ├── config.py               # Конфигурация
+│       ├── di.py                   # DI контейнер
+│       ├── fssp_client.py          # HTTP-клиент (Playwright)
+│       ├── parser.py               # Парсер HTML
+│       ├── url_builder.py          # Построитель URL
+│       ├── captcha.py              # Решение капчи
+│       ├── task_repository.py      # Репозиторий задач (SQLite)
+│       ├── http/                   # HTTP API
+│       │   ├── app.py              # FastAPI приложение
+│       │   ├── api.py              # REST endpoints
+│       │   ├── dependencies.py     # FastAPI dependencies
+│       │   └── schemas/            # DTO (Data Transfer Objects)
+│       │       ├── search.py       # DTO для поиска
+│       │       └── task.py         # DTO для задач
+│       ├── cli.py                  # CLI интерфейс
+│       └── mcp/                    # MCP сервер
+│           └── server.py
+├── tests/                           # Тесты
+│   ├── unit/                       # Unit-тесты
+│   │   ├── domain/                 # Тесты доменных моделей
+│   │   ├── application/            # Тесты сервисов
+│   │   └── infrastructure/         # Тесты инфраструктуры
+│   ├── integration/                # Интеграционные тесты
+│   └── e2e/                        # End-to-end тесты
+├── logs/                           # Логи приложения
+├── temp/                           # Временные файлы (капчи, скриншоты)
+├── main.py                         # Точка входа (FastAPI factory)
+├── mcp_server.py                   # Точка входа MCP server
+├── pyproject.toml                  # Зависимости и конфигурация
+├── justfile                        # Скрипты для разработки
 └── README.md
 ```
 

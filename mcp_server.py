@@ -18,24 +18,23 @@ def main():
     # Настройка логирования
     setup_logging(
         level=logging.DEBUG if settings.DEBUG else logging.INFO,
-        log_path=settings.LOG_PATH,
+        log_path=settings.log_path,
         max_bytes=settings.LOG_FILE_MAX_BYTES,
         backup_count=settings.LOG_FILE_BACKUP_COUNT,
     )
 
     # Проверка наличия API ключа для капчи
-    if settings.captcha is None or not settings.captcha.api_key:
+    if not settings.RUCAPTCH_API_KEY:
         print(
             "Ошибка: Не задан API ключ RuCaptcha (RUCAPTCH_API_KEY)",
             file=sys.stderr,
         )
         sys.exit(1)
 
-    # Инициализация зависимостей
-    solver = CaptchaSolver(settings.captcha.api_key)
-    client = FsspClient(solver)
-    parser = FsspHtmlParser()
-    service = FsspService(settings, client, parser)
+    # Инициализация зависимостей через DI контейнер
+    from src.infrastructure.di import build_container
+    container = build_container(settings)
+    service = container.fssp_service
 
     # Создание MCP server
     mcp = create_mcp_server(service)

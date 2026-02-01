@@ -1,85 +1,82 @@
-import logging
+"""FastAPI приложение."""
+
 from contextlib import asynccontextmanager
 
+import structlog
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from src.application.task_manager import TaskManager
 from src.domain.errors import CaptchaLimitExceeded, DomainError
-from src.infrastructure.captcha import CaptchaSolver
 from src.infrastructure.config import Settings
-from src.infrastructure.fssp_client import FsspClient
-from src.infrastructure.parser import FsspHtmlParser
-from src.infrastructure.task_repository import TaskRepository
-from src.application.fssp_service import FsspService
+from src.infrastructure.di import Container, build_container
 
 from .api import router as api_router
 from .middleware import add_request_context
 from .tasks_api import router as tasks_router
 
-logger = logging.getLogger(__name__)
-
-
-def _build_fssp_service(settings: Settings) -> FsspService:
-    """Создание экземпляра FsspService."""
-    captcha_solver = CaptchaSolver(
-        api_key=settings.captcha.api_key if settings.captcha else settings.RUCAPTCH_API_KEY
-    )
-    client = FsspClient(captcha_solver=captcha_solver)
-    parser = FsspHtmlParser()
-    return FsspService(settings=settings, client=client, parser=parser)
+logger = structlog.get_logger()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Управление жизненным циклом приложения."""
-    settings: Settings = app.settings
+    container: Container = app.state.container
 
     # Инициализация репозитория задач
-    db_path = settings.DATABASE_PATH
-    repository = TaskRepository(db_path)
-    await repository.initialize()
-    logger.info("Task repository initialized", extra={"db_path": str(db_path)})
+    await container.task_repository.initialize()
+    logger.info("Task repository инициализирован", db_path=str(container.settings.database_path))
 
-    # Создание FsspService
-    fssp_service = _build_fssp_service(settings)
-    app.state.fssp_service = fssp_service
-
-    # Создание и запуск TaskManager
-    task_manager = TaskManager(repository=repository, fssp_service=fssp_service)
-    await task_manager.start()
-    app.state.task_manager = task_manager
-    logger.info("Task manager started")
+    # Запуск TaskManager
+    await container.task_manager.start()
+    logger.info("Task manager запущен")
 
     yield
 
     # Остановка TaskManager
-    await task_manager.stop()
-    logger.info("Task manager stopped")
+    await container.task_manager.stop()
+    logger.info("Task manager остановлен")
 
     # Закрытие репозитория
-    await repository.close()
-    logger.info("Task repository closed")
+    await container.task_repository.close()
+    logger.info("Task repository закрыт")
 
 
 def create_app(settings: Settings):
+    """
+    Создать и настроить FastAPI приложение.
+
+    Args:
+        settings: Настройки приложения
+
+    Returns:
+        Настроенное FastAPI приложение
+    """
+    # Построение контейнера зависимостей
+    container = build_container(settings)
+
     app = FastAPI(title=settings.PROJECT_NAME, debug=settings.DEBUG, lifespan=lifespan)
     app.middleware("http")(add_request_context)
-    app.settings = settings
+    
+    # Сохраняем контейнер в состоянии приложения
+    app.state.container = container
 
     # Роутеры
     app.include_router(api_router, prefix="/api")
     app.include_router(tasks_router, prefix="/api")
 
+    # Обработчики ошибок
     @app.exception_handler(CaptchaLimitExceeded)
-    async def captcha_limit_handler(request: Request, exc: CaptchaLimitExceeded):  # noqa: WPS430
+    async def captcha_limit_handler(request: Request, exc: CaptchaLimitExceeded):
         return JSONResponse(
             status_code=429,
             content={"detail": str(exc), "error_code": "CAPTCHA_LIMIT_EXCEEDED"},
         )
 
     @app.exception_handler(DomainError)
-    async def domain_error_handler(request: Request, exc: DomainError):  # noqa: WPS430
-        return JSONResponse(status_code=502, content={"detail": str(exc)})
+    async def domain_error_handler(request: Request, exc: DomainError):
+        return JSONResponse(
+            status_code=502,
+            content={"detail": str(exc), "error_code": type(exc).__name__},
+        )
 
     return app

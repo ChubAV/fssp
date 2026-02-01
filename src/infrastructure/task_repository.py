@@ -155,7 +155,7 @@ class TaskRepository:
         rows = await cursor.fetchall()
         return [self._row_to_task(row) for row in rows]
 
-    async def get_pending_tasks(self) -> list[Task]:
+    async def list_pending(self, limit: int = 100) -> list[Task]:
         """Получение всех задач в статусе PENDING."""
         cursor = await self._connection.execute(
             "SELECT * FROM tasks WHERE status = ? ORDER BY created_at ASC",

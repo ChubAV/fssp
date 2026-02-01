@@ -9,7 +9,7 @@ def create_fastapi_app():
     settings = create_settings()
     setup_logging(
         level=logging.DEBUG if settings.DEBUG else logging.INFO,
-        log_path=settings.LOG_PATH,
+        log_path=settings.log_path,
         max_bytes=settings.LOG_FILE_MAX_BYTES,
         backup_count=settings.LOG_FILE_BACKUP_COUNT,
         )

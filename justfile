@@ -29,15 +29,40 @@ MCP_PORT := env_var_or_default("MCP_PORT", "8100")
 mcp-http:
     MCP_TRANSPORT=http uv run python mcp_server.py
 
-# # тесты (пример, подставьте свои команды)
-# test:
-#     pytest -q
+# тесты
+test:
+    uv run pytest -v
 
-# # линтеры (пример, подставьте свои)
-# lint:
-#     ruff check src
-# fmt:
-#     ruff format src
+# тесты с покрытием
+test-cov:
+    uv run pytest -v --cov=src --cov-report=term-missing --cov-report=html
+
+# только unit-тесты
+test-unit:
+    uv run pytest -v tests/unit/
+
+# только integration-тесты
+test-integration:
+    uv run pytest -v tests/integration/
+
+# только e2e-тесты
+test-e2e:
+    uv run pytest -v tests/e2e/
+
+# линтеры
+lint:
+    uv run ruff check src tests
+
+# форматирование
+fmt:
+    uv run ruff format src tests
+
+# проверка форматирования
+fmt-check:
+    uv run ruff format --check src tests
+
+# полная проверка (линтинг + тесты)
+check: lint test
 
 # # запуск через Docker (если используете compose)
 # dc-up:
