@@ -40,10 +40,37 @@ class DebtorCaseResponse(BaseModel):
 
     region: str | None = Field(default=None, description="Регион")
     debtor: str = Field(description="ФИО или наименование должника")
+    debtor_type: str | None = Field(default=None, description="Тип должника: physical или legal")
+    
+    # Поля для физических лиц
+    debtor_last_name: str | None = Field(default=None, description="Фамилия (для физ. лиц)")
+    debtor_first_name: str | None = Field(default=None, description="Имя (для физ. лиц)")
+    debtor_patronymic: str | None = Field(default=None, description="Отчество (для физ. лиц)")
+    debtor_birthday: str | None = Field(default=None, description="Дата рождения (для физ. лиц)")
+    debtor_birthplace: str | None = Field(default=None, description="Место рождения (для физ. лиц)")
+    
+    # Поля для юридических лиц
+    debtor_name: str | None = Field(default=None, description="Наименование организации (для юр. лиц)")
+    debtor_address: str | None = Field(default=None, description="Юридический адрес (для юр. лиц)")
+    debtor_inn: str | None = Field(default=None, description="ИНН (для юр. лиц)")
+    
     ip: str = Field(description="Номер исполнительного производства")
     doc: str = Field(description="Номер исполнительного документа")
+    
+    # Поля для документа (основание для возбуждения ИП)
+    doc_basis: str | None = Field(default=None, description="Основание для возбуждения ИП")
+    doc_issuer: str | None = Field(default=None, description="Орган, выдавший документ")
+    creditor_inn: str | None = Field(default=None, description="ИНН взыскателя")
+    
     end_reason: str | None = Field(default=None, description="Причина окончания")
-    debt: str = Field(description="Сумма задолженности")
+    debt: str = Field(description="Сумма задолженности (полная строка)")
+    
+    # Поля для информации о долге
+    debt_type: str | None = Field(default=None, description="Тип задолженности")
+    debt_amount: str | None = Field(default=None, description="Сумма долга")
+    debt_remaining: str | None = Field(default=None, description="Остаток долга по ИД")
+    debt_bailiff_fee: str | None = Field(default=None, description="Исполнительский сбор")
+    
     office: str = Field(description="Отдел судебных приставов")
     bailiff: str = Field(description="ФИО пристава-исполнителя")
 
@@ -61,10 +88,26 @@ class DebtorCaseResponse(BaseModel):
         return cls(
             region=case.region,
             debtor=case.debtor,
+            debtor_type=case.debtor_type,
+            debtor_last_name=case.debtor_last_name,
+            debtor_first_name=case.debtor_first_name,
+            debtor_patronymic=case.debtor_patronymic,
+            debtor_birthday=case.debtor_birthday,
+            debtor_birthplace=case.debtor_birthplace,
+            debtor_name=case.debtor_name,
+            debtor_address=case.debtor_address,
+            debtor_inn=case.debtor_inn,
             ip=case.ip,
             doc=case.doc,
+            doc_basis=case.doc_basis,
+            doc_issuer=case.doc_issuer,
+            creditor_inn=case.creditor_inn,
             end_reason=case.end_reason,
             debt=case.debt,
+            debt_type=case.debt_type,
+            debt_amount=case.debt_amount,
+            debt_remaining=case.debt_remaining,
+            debt_bailiff_fee=case.debt_bailiff_fee,
             office=case.office,
             bailiff=case.bailiff,
         )

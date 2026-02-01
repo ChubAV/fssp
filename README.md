@@ -1,104 +1,206 @@
-# FSSP — сервис поиска исполнительных производств
+# FSSP Service
 
-Микросервис для автоматизированного поиска сведений об исполнительных производствах на сайте [fssp.gov.ru](https://fssp.gov.ru/) с REST API, CLI и MCP‑сервером для интеграции с AI‑клиентами (Cursor, Claude Desktop и др.).
+Микросервис для автоматизированного поиска исполнительных производств на сайте [ФССП России](https://fssp.gov.ru/).
+
+Предоставляет REST API, CLI и MCP-сервер для интеграции с AI-клиентами (Cursor, Claude Desktop и др.).
 
 ## Возможности
 
-- Поиск по номеру ИП, ФИО + дате рождения или ИНН
-- Автоматическое решение капчи через RuCaptcha
-- REST API на FastAPI и CLI на Typer/Rich
-- MCP Server (Model Context Protocol) с инструментами поиска по номеру ИП, ФИО+ДР и ИНН
-- Асинхронная обработка задач с retry-логикой и параллелизмом
-- Вывод результатов в человеко‑читаемом виде и в JSON
-- Структурированное логирование и ротация логов
+- **Три типа поиска**: по номеру ИП, по ФИО + дате рождения, по ИНН
+- **Автоматическое решение капчи** через RuCaptcha
+- **REST API** (FastAPI) с автодокументацией Swagger/ReDoc
+- **CLI** (Typer + Rich) для работы из терминала
+- **MCP Server** для интеграции с AI-ассистентами
+- **Детальный парсинг** данных о должнике, документах и задолженности
+- **Структурированное логирование** с ротацией файлов
 
-## Архитектура
+## Быстрый старт
 
-Проект следует принципам **Clean Architecture** с чистым разделением слоев:
-
-- **Domain Layer**: доменные модели, бизнес-правила, протоколы (интерфейсы)
-- **Application Layer**: бизнес-логика, оркестрация, use cases
-- **Infrastructure Layer**: внешние зависимости (HTTP, БД, Playwright, MCP)
-
-**Основные паттерны:**
-- Dependency Injection через контейнер (`src/infrastructure/di.py`)
-- Инверсия зависимостей (Domain не зависит от Infrastructure)
-- Protocol-based design для тестируемости
-- DTO для разделения API и Domain моделей
-- Retry pattern с экспоненциальным backoff
-
-## Технологии
-
-- Python 3.13+, FastAPI, Pydantic, Typer, Rich, Structlog
-- Playwright для работы с сайтом ФССП
-- uv как менеджер пакетов/раннер
-- FastMCP (MCP server) для интеграции с AI‑клиентами
-- Docker (готовый образ для продакшена)
-- pytest, pytest-asyncio, pytest-cov для тестирования
-- ruff для линтинга и форматирования
-
-## Требования
+### Требования
 
 - Python 3.13+
-- [uv](https://github.com/astral-sh/uv)
-- [just](https://github.com/casey/just) (опционально)
+- [uv](https://github.com/astral-sh/uv) — менеджер пакетов
+- [just](https://github.com/casey/just) — task runner (опционально)
 
-## Быстрый старт (локально)
+### Установка
 
 ```bash
 git clone <repository-url>
 cd fssp
 uv sync
 uv run playwright install chromium
-cp .env.example .env  # при наличии, либо заполните вручную
 ```
 
-Минимальный `.env`:
+### Конфигурация
+
+Создайте файл `.env`:
+
 ```bash
-RUCAPTCH_API_KEY=your_rucaptcha_api_key_here
+RUCAPTCH_API_KEY=your_rucaptcha_api_key  # обязательно
 DEBUG=false
 HOST=0.0.0.0
 PORT=8000
 ```
 
-### Запуск HTTP API
+### Запуск
 
-- Дев-сервер с автоперезапуском: `just dev`
-- Продакшен без автоперезапуска: `just run`
-- Кастомный хост/порт: `just dev HOST=127.0.0.1 PORT=8080`
-
-API доступно на `http://localhost:8000`, документация:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-
-### CLI
-
-- По номеру ИП: `just cli ip --ip-number "1234567/12/34/56"`
-- По ФИО: `just cli person --last-name "Иванов" --first-name "Иван" --birthday "16.05.1992"`
-- По ИНН: `just cli inn --inn "1234567890"`
-- Вывод в JSON: добавить `--format json`
-
-### MCP Server
-
-- Стандартный режим (stdio) для локальной интеграции с AI‑клиентом: `just mcp`
-- HTTP‑режим (по умолчанию `0.0.0.0:8100`): `just mcp-http` (можно переопределить `MCP_HOST` и `MCP_PORT`)
-
-MCP‑сервер предоставляет три инструмента:
-- `search_by_ip(ip_number: str)` — поиск по номеру ИП/СД/СВ
-- `search_by_person(last_name, first_name, birthday, patronymic?)` — поиск по ФИО и дате рождения
-- `search_by_inn(inn: str)` — поиск по ИНН (физ/юр лицо)
-
-## Запуск в Docker
-
-Dockerfile собирает продакшен-образ с установленным Chromium и зависимостями Playwright.
-
-1) Собрать образ:
 ```bash
-docker build -t fssp .
+# HTTP API (dev-режим с автоперезапуском)
+just dev
+
+# HTTP API (production)
+just run
+
+# CLI
+just cli ip --ip-number "1234567/12/34/56"
+just cli person --last-name "Иванов" --first-name "Иван" --birthday "16.05.1992"
+just cli inn --inn "1234567890"
+
+# MCP Server
+just mcp          # stdio (для локальной интеграции)
+just mcp-http     # HTTP (порт 8100)
 ```
 
-2) Запустить контейнер (пример с `.env` и монтированием логов/временных файлов):
+## REST API
+
+После запуска документация доступна по адресам:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+### Endpoints
+
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| GET | `/healthcheck` | Проверка работоспособности |
+| POST | `/ip` | Поиск по номеру ИП |
+| POST | `/person` | Поиск по ФИО и дате рождения |
+| POST | `/inn` | Поиск по ИНН |
+
+### Примеры запросов
+
+**Поиск по номеру ИП:**
 ```bash
+curl -X POST http://localhost:8000/ip \
+  -H "Content-Type: application/json" \
+  -d '{"ip_number": "1234567/12/34/56"}'
+```
+
+**Поиск по ФИО:**
+```bash
+curl -X POST http://localhost:8000/person \
+  -H "Content-Type: application/json" \
+  -d '{
+    "last_name": "Иванов",
+    "first_name": "Иван",
+    "patronymic": "Иванович",
+    "birthday": "16.05.1992"
+  }'
+```
+
+**Поиск по ИНН:**
+```bash
+curl -X POST http://localhost:8000/inn \
+  -H "Content-Type: application/json" \
+  -d '{"inn": "1234567890"}'
+```
+
+### Формат ответа
+
+```json
+{
+  "items": [
+    {
+      "region": "Московская область",
+      "debtor": "Иванов Иван Иванович 01.01.1990",
+      "debtor_type": "physical",
+      "debtor_last_name": "Иванов",
+      "debtor_first_name": "Иван",
+      "debtor_patronymic": "Иванович",
+      "debtor_birthday": "01.01.1990",
+      "debtor_birthplace": "г. Москва",
+      "ip": "12345/21/50001-ИП",
+      "doc": "2-1234/2021 от 01.01.2021",
+      "doc_basis": "Судебный приказ",
+      "doc_issuer": "Мировой судья судебного участка №1",
+      "creditor_inn": "7707083893",
+      "end_reason": null,
+      "debt": "Задолженность: 50000.00 руб.",
+      "debt_type": "Иные взыскания имущественного характера",
+      "debt_amount": "50000.00",
+      "debt_remaining": "25000.00",
+      "debt_bailiff_fee": "3500.00",
+      "office": "Одинцовское РОСП",
+      "bailiff": "Петров П.П."
+    }
+  ],
+  "total": 1
+}
+```
+
+## CLI
+
+```bash
+# Поиск по номеру ИП
+just cli ip --ip-number "1234567/12/34/56"
+
+# Поиск по ФИО (отчество опционально)
+just cli person --last-name "Иванов" --first-name "Иван" --birthday "16.05.1992"
+just cli person --last-name "Иванов" --first-name "Иван" --patronymic "Иванович" --birthday "16.05.1992"
+
+# Поиск по ИНН
+just cli inn --inn "1234567890"      # юрлицо (10 цифр)
+just cli inn --inn "123456789012"    # физлицо (12 цифр)
+
+# Вывод в JSON
+just cli ip --ip-number "1234567/12/34/56" --format json
+```
+
+## MCP Server
+
+MCP (Model Context Protocol) сервер для интеграции с AI-клиентами.
+
+### Инструменты
+
+| Инструмент | Параметры | Описание |
+|------------|-----------|----------|
+| `search_by_ip` | `ip_number` | Поиск по номеру ИП/СД/СВ |
+| `search_by_person` | `last_name`, `first_name`, `birthday`, `patronymic?` | Поиск по ФИО |
+| `search_by_inn` | `inn` | Поиск по ИНН |
+
+### Запуск
+
+```bash
+# stdio (стандартный режим для Cursor, Claude Desktop)
+just mcp
+
+# HTTP-режим
+just mcp-http
+MCP_HOST=127.0.0.1 MCP_PORT=8200 just mcp-http
+```
+
+### Настройка в Cursor
+
+Добавьте в `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "fssp": {
+      "command": "uv",
+      "args": ["run", "python", "mcp_server.py"],
+      "cwd": "/path/to/fssp"
+    }
+  }
+}
+```
+
+## Docker
+
+```bash
+# Сборка
+docker build -t fssp .
+
+# Запуск
 docker run --rm \
   -p 8000:8000 \
   --env-file .env \
@@ -107,132 +209,116 @@ docker run --rm \
   fssp
 ```
 
-- Переменные `HOST`, `PORT`, `DEBUG` заданы в образе по умолчанию, `RUCAPTCH_API_KEY` обязателен.
-- Playwright и его зависимости устанавливаются на этапе сборки, дополнительных шагов не требуется.
+Playwright и Chromium устанавливаются автоматически при сборке образа.
 
 ## Конфигурация
 
 | Переменная | Описание | По умолчанию |
 |------------|----------|--------------|
-| `RUCAPTCH_API_KEY` | API-ключ RuCaptcha (обязательно) | — |
+| `RUCAPTCH_API_KEY` | API-ключ RuCaptcha | — (обязательно) |
 | `DEBUG` | Режим отладки | `false` |
-| `HOST` | Хост HTTP сервера | `0.0.0.0` |
-| `PORT` | Порт HTTP сервера | `8000` |
-| `MCP_TRANSPORT` | Транспорт MCP (`stdio` или `http`) | `stdio` |
-| `MCP_HOST` | Хост MCP‑HTTP сервера | `0.0.0.0` |
-| `MCP_PORT` | Порт MCP‑HTTP сервера | `8100` |
+| `HOST` | Хост HTTP-сервера | `0.0.0.0` |
+| `PORT` | Порт HTTP-сервера | `8000` |
+| `MCP_TRANSPORT` | Транспорт MCP: `stdio` или `http` | `stdio` |
+| `MCP_HOST` | Хост MCP HTTP-сервера | `0.0.0.0` |
+| `MCP_PORT` | Порт MCP HTTP-сервера | `8100` |
 
 ## Форматы входных данных
 
-- Номер ИП: `1234567/12/34/56` или `1234567/12/34/56-ИП`
-- Дата рождения: `DD.MM.YYYY` (например, `16.05.1992`)
-- ИНН: 10 цифр (юрлицо) или 12 цифр (физлицо)
+| Тип | Формат | Примеры |
+|-----|--------|---------|
+| Номер ИП | `NNNNNNN/NN/NN/NN` или `NNNNNNN/NN/NNNNN-ИП/СД/СВ` | `1234567/12/34/56`, `1234567/12/34567-ИП` |
+| Дата рождения | `DD.MM.YYYY` | `16.05.1992` |
+| ИНН юрлица | 10 цифр | `1234567890` |
+| ИНН физлица | 12 цифр | `123456789012` |
 
-## Ошибки и логирование
+## Архитектура
 
-- Коды доменных ошибок: `CaptchaError`, `CaptchaLimitExceeded`, `FsspUnavailable`, `ParsingError`, `ValidationError`.
-- Логи в `logs/main.log` с ротацией (5 МБ, 3 бэкапа). Уровень зависит от `DEBUG`.
+Проект следует принципам **Clean Architecture**:
+
+```
+src/
+├── domain/           # Доменный слой
+│   ├── models.py     # Модели данных (Person, Inn, IpNumber, DebtorCase)
+│   ├── errors.py     # Доменные ошибки
+│   ├── task.py       # Модель асинхронной задачи
+│   └── protocols.py  # Интерфейсы (протоколы)
+├── application/      # Слой бизнес-логики
+│   ├── fssp_service.py    # Основной сервис
+│   ├── task_manager.py    # Менеджер задач
+│   └── retry_policy.py    # Политика повторов
+└── infrastructure/   # Инфраструктурный слой
+    ├── config.py          # Конфигурация
+    ├── di.py              # Dependency Injection
+    ├── fssp_client.py     # Playwright-клиент
+    ├── parser.py          # HTML-парсер
+    ├── captcha.py         # Интеграция с RuCaptcha
+    ├── http/              # REST API (FastAPI)
+    ├── cli.py             # CLI (Typer)
+    └── mcp/               # MCP Server
+```
+
+**Ключевые паттерны:**
+- Dependency Injection через контейнер
+- Protocol-based design для тестируемости
+- DTO для разделения API и доменных моделей
+- Retry с экспоненциальным backoff
 
 ## Разработка
 
-### Установка зависимостей
+### Установка dev-зависимостей
 
 ```bash
-# Основные зависимости
-uv sync
-
-# С dev-зависимостями (для разработки и тестирования)
 uv sync --extra dev
 ```
 
-### Запуск тестов
+### Тесты
 
 ```bash
-# Все тесты
-just test
-
-# Тесты с покрытием
-just test-cov
-
-# Только unit-тесты
-just test-unit
-
-# Только integration-тесты
-just test-integration
-
-# Только e2e-тесты
-just test-e2e
+just test           # все тесты
+just test-cov       # с покрытием
+just test-unit      # unit-тесты
+just test-integration  # интеграционные
+just test-e2e       # end-to-end
 ```
 
-### Линтинг и форматирование
+### Линтинг
 
 ```bash
-# Проверка стиля кода
-just lint
-
-# Автоматическое форматирование
-just fmt
-
-# Полная проверка (lint + tests)
-just check
+just lint           # проверка (ruff)
+just fmt            # форматирование
+just check          # lint + tests
 ```
 
-### Текущее покрытие тестами
+## Обработка ошибок
 
-- **Domain модели**: 97%
-- **Infrastructure (parser, config, DI)**: 88-98%
-- **Application (services)**: требует расширения
-- **Общее покрытие**: ~58% (цель: >80%)
+Сервис возвращает структурированные ошибки:
 
-## Структура проекта
+| Код | Тип | Описание |
+|-----|-----|----------|
+| 400 | `ValidationError` | Некорректные входные данные |
+| 502 | `FsspUnavailable` | Сайт ФССП недоступен |
+| 502 | `CaptchaError` | Ошибка решения капчи |
+| 429 | `CaptchaLimitExceeded` | Превышен лимит капчи |
+| 500 | `ParsingError` | Ошибка парсинга HTML |
 
-```
-fssp/
-├── src/
-│   ├── domain/                      # Доменный слой
-│   │   ├── models.py               # Доменные модели и value objects
-│   │   ├── task.py                 # Модель задачи
-│   │   ├── errors.py               # Доменные ошибки
-│   │   └── protocols.py            # Протоколы (интерфейсы)
-│   ├── application/                 # Слой бизнес-логики
-│   │   ├── fssp_service.py         # Сервис работы с ФССП
-│   │   ├── task_manager.py         # Менеджер асинхронных задач
-│   │   └── retry_policy.py         # Политика повторных попыток
-│   └── infrastructure/              # Инфраструктурный слой
-│       ├── config.py               # Конфигурация
-│       ├── di.py                   # DI контейнер
-│       ├── fssp_client.py          # HTTP-клиент (Playwright)
-│       ├── parser.py               # Парсер HTML
-│       ├── url_builder.py          # Построитель URL
-│       ├── captcha.py              # Решение капчи
-│       ├── task_repository.py      # Репозиторий задач (SQLite)
-│       ├── http/                   # HTTP API
-│       │   ├── app.py              # FastAPI приложение
-│       │   ├── api.py              # REST endpoints
-│       │   ├── dependencies.py     # FastAPI dependencies
-│       │   └── schemas/            # DTO (Data Transfer Objects)
-│       │       ├── search.py       # DTO для поиска
-│       │       └── task.py         # DTO для задач
-│       ├── cli.py                  # CLI интерфейс
-│       └── mcp/                    # MCP сервер
-│           └── server.py
-├── tests/                           # Тесты
-│   ├── unit/                       # Unit-тесты
-│   │   ├── domain/                 # Тесты доменных моделей
-│   │   ├── application/            # Тесты сервисов
-│   │   └── infrastructure/         # Тесты инфраструктуры
-│   ├── integration/                # Интеграционные тесты
-│   └── e2e/                        # End-to-end тесты
-├── logs/                           # Логи приложения
-├── temp/                           # Временные файлы (капчи, скриншоты)
-├── main.py                         # Точка входа (FastAPI factory)
-├── mcp_server.py                   # Точка входа MCP server
-├── pyproject.toml                  # Зависимости и конфигурация
-├── justfile                        # Скрипты для разработки
-└── README.md
-```
+Логи записываются в `logs/main.log` с ротацией (5 МБ, 3 бэкапа).
 
+## Технологии
 
+- **Python 3.13+**, **FastAPI**, **Pydantic** — API и валидация
+- **Playwright** — автоматизация браузера
+- **FastMCP** — MCP-сервер
+- **Typer**, **Rich** — CLI
+- **Structlog** — логирование
+- **pytest** — тестирование
+- **ruff** — линтинг
+- **uv** — менеджер пакетов
+- **Docker** — контейнеризация
+
+## Лицензия
+
+MIT
 
 ## Автор
 

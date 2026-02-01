@@ -85,10 +85,37 @@ class DebtorCase(BaseModel):
 
     region: str | None = None
     debtor: str
+    debtor_type: str | None = None  # "physical" или "legal"
+    
+    # Поля для физических лиц
+    debtor_last_name: str | None = None
+    debtor_first_name: str | None = None
+    debtor_patronymic: str | None = None
+    debtor_birthday: str | None = None
+    debtor_birthplace: str | None = None
+    
+    # Поля для юридических лиц
+    debtor_name: str | None = None
+    debtor_address: str | None = None
+    debtor_inn: str | None = None
+    
     ip: str
     doc: str
+    
+    # Поля для документа (основание для возбуждения ИП)
+    doc_basis: str | None = None  # Основание для возбуждения ИП
+    doc_issuer: str | None = None  # Орган, выдавший документ
+    creditor_inn: str | None = None  # ИНН взыскателя
+    
     end_reason: str | None = None
     debt: str
+    
+    # Поля для информации о долге
+    debt_type: str | None = None  # Тип задолженности
+    debt_amount: str | None = None  # Сумма долга
+    debt_remaining: str | None = None  # Остаток долга по ИД
+    debt_bailiff_fee: str | None = None  # Исполнительский сбор
+    
     office: str
     bailiff: str
 
