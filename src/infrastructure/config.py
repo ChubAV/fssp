@@ -16,6 +16,10 @@ def get_temp_path() -> Path:
     return get_base_path() / "temp"
 
 
+def get_database_path() -> Path:
+    return get_base_path() / "tasks.db"
+
+
 class BrowserConfig(BaseModel):
     headless: bool = True
     navigation_timeout_ms: int = 60000
@@ -56,6 +60,7 @@ class Settings(BaseSettings):
     LOG_FILE_MAX_BYTES: int = Field(description="Максимальный размер файла лога", default=5 * 1024 * 1024)
     LOG_FILE_BACKUP_COUNT: int = Field(description="Количество копий файла лога", default=3)
     TEMP_PATH: Path = Field(description="Путь к временным файлам", default_factory=get_temp_path)
+    DATABASE_PATH: Path = Field(description="Путь к БД задач SQLite", default_factory=get_database_path)
     RUCAPTCH_API_KEY: str = Field(description="API ключ для RuCaptcha")
     MCP_TRANSPORT: str = Field(description="Тип транспорта MCP: stdio или http", default="stdio")
     MCP_HOST: str = Field(description="Хост для HTTP транспорта MCP", default="0.0.0.0")

@@ -1,6 +1,7 @@
 from fastapi import Request
 
 from src.application.fssp_service import FsspService
+from src.application.task_manager import TaskManager
 from src.infrastructure.config import Settings
 from src.infrastructure.captcha import CaptchaSolver
 from src.infrastructure.fssp_client import FsspClient
@@ -26,3 +27,11 @@ def get_fssp_service(request: Request) -> FsspService:
     service = _build_fssp_service(settings)
     request.app.state.fssp_service = service
     return service
+
+
+def get_task_manager(request: Request) -> TaskManager:
+    """Получение экземпляра TaskManager из состояния приложения."""
+    task_manager = getattr(request.app.state, "task_manager", None)
+    if task_manager is None:
+        raise RuntimeError("TaskManager не инициализирован. Проверьте настройки приложения.")
+    return task_manager

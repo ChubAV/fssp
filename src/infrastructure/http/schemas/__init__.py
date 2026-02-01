@@ -1,6 +1,14 @@
 """HTTP-специфичные схемы для API."""
 from pydantic import BaseModel, RootModel
 
+from src.infrastructure.http.schemas.task import (
+    CreateTaskRequest,
+    TaskCreatedResponse,
+    TaskListResponse,
+    TaskResponse,
+    TaskStatsResponse,
+)
+
 
 class DebItem(BaseModel):
     """DTO элемента результата для API."""
@@ -31,3 +39,16 @@ class HealthcheckResponse(BaseModel):
     """Ответ на запрос healthcheck"""
 
     status: str
+
+
+__all__ = [
+    "CreateTaskRequest",
+    "DebItem",
+    "DebItemList",
+    "ErrorResponse",
+    "HealthcheckResponse",
+    "TaskCreatedResponse",
+    "TaskListResponse",
+    "TaskResponse",
+    "TaskStatsResponse",
+]
