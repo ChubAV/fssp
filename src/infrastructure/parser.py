@@ -41,9 +41,14 @@ class FsspHtmlParser:
         # Проверяем, есть ли ИНН (только цифры, 10 или 12 символов)
         inn_pattern = re.compile(r"^\d{10}(\d{2})?$")
         birthday_pattern = re.compile(r"^\d{2}\.\d{2}\.\d{4}$")
+        birthday_search_pattern = re.compile(r"\d{2}\.\d{2}\.\d{4}")
         
         has_inn = any(inn_pattern.match(line.strip()) for line in lines)
-        has_birthday = any(birthday_pattern.match(line.strip()) for line in lines)
+        # Дата может быть как отдельной строкой, так и внутри строки с ФИО
+        has_birthday = any(
+            birthday_pattern.match(line.strip()) or birthday_search_pattern.search(line)
+            for line in lines
+        )
         
         if has_inn:
             # Юридическое лицо
@@ -64,24 +69,43 @@ class FsspHtmlParser:
             # Физическое лицо
             result["debtor_type"] = "physical"
             
-            # Первая строка - ФИО
+            # Первая строка - ФИО (возможно с датой рождения в той же строке)
             if len(lines) > 0:
-                fio_parts = lines[0].split()
+                fio_line = lines[0]
+                
+                # Проверяем, есть ли дата рождения в первой строке
+                # (формат: ФИО ДАТА МЕСТО_РОЖДЕНИЯ в одной строке)
+                birthday_in_fio = re.search(r"(\d{2}\.\d{2}\.\d{4})", fio_line)
+                if birthday_in_fio:
+                    # Дата в той же строке - разделяем
+                    fio_part = fio_line[:birthday_in_fio.start()].strip()
+                    result["debtor_birthday"] = birthday_in_fio.group(1)
+                    # Место рождения - всё после даты
+                    birthplace_part = fio_line[birthday_in_fio.end():].strip()
+                    if birthplace_part:
+                        result["debtor_birthplace"] = birthplace_part
+                else:
+                    fio_part = fio_line
+                
+                # Парсим ФИО: фамилия, имя, всё остальное - отчество
+                fio_parts = fio_part.split()
                 if len(fio_parts) >= 1:
                     result["debtor_last_name"] = fio_parts[0]
                 if len(fio_parts) >= 2:
                     result["debtor_first_name"] = fio_parts[1]
                 if len(fio_parts) >= 3:
-                    result["debtor_patronymic"] = fio_parts[2]
+                    # Отчество - все слова после имени
+                    result["debtor_patronymic"] = " ".join(fio_parts[2:])
             
-            # Ищем дату рождения
-            for i, line in enumerate(lines):
-                if birthday_pattern.match(line.strip()):
-                    result["debtor_birthday"] = line.strip()
-                    # Следующая строка после даты рождения - место рождения
-                    if i + 1 < len(lines):
-                        result["debtor_birthplace"] = lines[i + 1]
-                    break
+            # Ищем дату рождения в отдельных строках (если не найдена в первой)
+            if "debtor_birthday" not in result:
+                for i, line in enumerate(lines):
+                    if birthday_pattern.match(line.strip()):
+                        result["debtor_birthday"] = line.strip()
+                        # Следующая строка после даты рождения - место рождения
+                        if i + 1 < len(lines):
+                            result["debtor_birthplace"] = lines[i + 1]
+                        break
         
         return result
 

@@ -678,6 +678,49 @@ def test_parse_debt_info_partial_data(parser):
     assert case.get("debt_bailiff_fee") is None
 
 
+def test_parse_foreign_name_with_multiple_patronymic_parts(parser):
+    """Тест парсинга иностранного имени с несколькими частями в отчестве."""
+    # Arrange
+    html = """
+    <div class="results-frame">
+        <table class="list">
+            <tr class="region-title">Краснодарский край</tr>
+            <tr>
+                <td class="first">
+                    АБУ ШАНАБ ТАРИК ЗИАД МУСТАФА 16.05.1992 ИОРДАНИЯ, Г. АЛЬ
+                </td>
+                <td>12345/20/23001-ИП</td>
+                <td>Судебный приказ от 01.01.2020</td>
+                <td></td>
+                <td></td>
+                <td>50000.00</td>
+                <td>ОСП Краснодара</td>
+                <td>Иванов И.И.</td>
+            </tr>
+        </table>
+    </div>
+    """
+
+    # Act
+    cases = parser.parse_cases(html)
+
+    # Assert
+    assert len(cases) == 1
+    case = cases[0]
+    
+    # Проверяем тип должника
+    assert case["debtor_type"] == "physical"
+    
+    # Проверяем ФИО - отчество должно содержать все части
+    assert case["debtor_last_name"] == "АБУ"
+    assert case["debtor_first_name"] == "ШАНАБ"
+    assert case["debtor_patronymic"] == "ТАРИК ЗИАД МУСТАФА"
+    
+    # Проверяем дату и место рождения
+    assert case["debtor_birthday"] == "16.05.1992"
+    assert case["debtor_birthplace"] == "ИОРДАНИЯ, Г. АЛЬ"
+
+
 def test_parse_debt_info_only_type(parser):
     """Тест парсинга долга только с типом задолженности."""
     # Arrange
